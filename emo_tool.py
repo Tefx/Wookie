@@ -2,6 +2,7 @@ import math
 import copy
 import array
 import itertools
+import random
 
 
 def get_info(wf, pool):
@@ -25,14 +26,15 @@ def get_info(wf, pool):
 		   comm_speeds, 	\
 		   comm_sizes
 
-def generate(random, n_tasks, n_types):
+def generate(n_tasks, n_types):
 	def cycle(*args):
 		for x in itertools.izip(*args):
 			for a in x:
 				yield a
 	return array.array("I", cycle([random.randint(0, n_tasks-1) for _ in range(n_tasks)], [random.randint(0, n_types-1) for _ in range(n_tasks)]))
 
-def evaluate(candidate, type_info_price,
+def evaluate(candidate, 
+			 type_info_price,
 			 type_info_ecu,
 			 task_base_time,
 			 task_preds,
@@ -41,7 +43,7 @@ def evaluate(candidate, type_info_price,
 			 n_tasks,
 			 n_nodes,
 			 n_types):
-
+	
 	c_task_node = lambda x:candidate[x*2]
 	c_node_type = lambda x:candidate[x*2+1]
 
@@ -84,18 +86,24 @@ def evaluate(candidate, type_info_price,
 
 	return round(o_time, 0), round(o_cost, 2)
 
-def cross_tool(random, mom, dad, n_tasks):
-	c = copy.deepcopy(mom)
+def cross_tool(mom, dad, n_tasks, inplace=False):
+	if not inplace:
+		c = copy.deepcopy(mom)
+		d = copy.deepcopy(dad)
+	else:
+		c, d = mom, dad
 
 	for i in range(random.randint(0, n_tasks-1), n_tasks):
 		c[i*2] = dad[i*2]
+		d[i*2] = mom[i*2]
 
 	for i in range(random.randint(0, n_tasks-1), n_tasks):
 		c[i*2+1] = dad[i*2+1]
+		d[i*2+1] = mom[i*2+1]
 
-	return [c]
+	return (c, d)
 
-def mutate_tool(random, candidate, n_tasks, n_types):
+def mutate_tool(candidate, n_tasks, n_types, multi=False):
 	for i in range(n_tasks):
 		p = random.random()
 		if p <= 1.0/n_tasks:
@@ -103,4 +111,7 @@ def mutate_tool(random, candidate, n_tasks, n_types):
 		p = random.random()
 		if p <= 1.0/n_tasks:
 			candidate[i*2+1] = random.randint(0, n_types-1)
-	return candidate
+	if not multi:
+		return candidate
+	else:
+		return (candidate, )

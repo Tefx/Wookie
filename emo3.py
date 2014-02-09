@@ -29,18 +29,18 @@ def evaluator(candidate, args):
 def generator(random, args):
 	n_tasks = args.get("n_tasks")
 	n_types = args.get("n_types")
-	return generate(random, n_tasks, n_types)
+	return generate(n_tasks, n_types)
 
 @inspyred.ec.variators.crossover
 def cross(random, mom, dad, args):
 	n_tasks = args.get("n_tasks")
-	return cross_tool(random, mom, dad, n_tasks)
+	return cross_tool(mom, dad, n_tasks)
 
 @inspyred.ec.variators.mutator
 def mutate(random, candidate, args):
 	n_tasks = args.get("n_tasks")
 	n_types = args.get("n_types")
-	return mutate_tool(random, candidate, n_tasks, n_types)
+	return mutate_tool(candidate, n_tasks, n_types)
 
 def nsga_2(task_names,
 		   type_names, 
@@ -63,9 +63,9 @@ def nsga_2(task_names,
 						  # mp_evaluator=evaluator,
 						  # pp_dependencies=(evaluate,),
 						  # pp_modules=("emo_tool",),
-						  pop_size=100,
+						  pop_size=10,
 						  maximize=False,
-						  max_generations=100,
+						  max_generations=1000,
 						  n_types=len(type_names),
 						  n_tasks=len(task_names),
 						  task_names=task_names,
