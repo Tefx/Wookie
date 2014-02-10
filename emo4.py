@@ -2,7 +2,7 @@ import random
 import array
 from deap import creator, base, algorithms, tools
 from emo_tool import get_info, evaluate, cross_tool, mutate_tool, generate
-import multiprocessing
+from log import dump
 
 def nsga_2(task_names,
 		   type_names, 
@@ -11,7 +11,8 @@ def nsga_2(task_names,
 		   task_base_time,
 		   task_preds,
 		   comm_speeds,
-		   comm_sizes):
+		   comm_sizes,
+		   archive_name=None):
 	
 	n_tasks = len(task_names)
 	n_nodes = n_tasks
@@ -79,19 +80,27 @@ def nsga_2(task_names,
 		if tuple(i.fitness.values) not in s:
 			s.add(tuple(i.fitness.values))
 			ar.append(i)
+
+	ar.sort(key=lambda x: x.fitness.values[0])
+
+	if archive_name:
+		dump(archive_name, ar, task_names, type_names, 
+			 type_info_price, type_info_ecu, task_base_time, 
+			 task_preds, comm_speeds, comm_sizes, 
+			 n_tasks, n_nodes, n_types)
+
 	return ar
 
 if __name__ == '__main__':
 	from sys import argv
 	from workflow import Workflow
 	from pool import AWS
+	import os
 
 	wf = Workflow(argv[1])
 	pool = AWS("aws.info")
 
-
-	ar = nsga_2(*get_info(wf, pool))
-	ar.sort(key=lambda x: x.fitness.values[0])
+	ar = nsga_2(*get_info(wf, pool), archive_name="archive/%s.ar" % os.path.split(argv[1])[1][:-4])
 
 	for i in range(len(ar)):
 		print "[%d]: Makespan: %.0fs\tCost: $%.2f" % (i, ar[i].fitness.values[0], ar[i].fitness.values[1])
