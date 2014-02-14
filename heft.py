@@ -12,9 +12,6 @@ def calculate_rank_u(task, rank_u, pool, workflow):
 				)
 	return rank_u[task]
 
-def est(task, instance):
-	pass
-
 def schedule(workflow, pool):
 	rank_u = {}
 	calculate_rank_u("entry", rank_u, pool, workflow)
@@ -75,9 +72,9 @@ if __name__ == '__main__':
 	print "Makespan: %.0fs\tCost: $%.2f" % (schedule(wf, cloud), cloud.charge())
 	# print list(cloud.results())
 
-	from show_result import trans, show
+	from  plot import trans, show
 	result = list(cloud.results())
 
-	stat(result)	
+	# stat(result)	
 
-	show(*trans(result))
+	# show(*trans(result))

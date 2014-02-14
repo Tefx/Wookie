@@ -3,6 +3,7 @@ import array
 from deap import creator, base, algorithms, tools
 from emo_tool import get_info, evaluate, cross_tool, mutate_tool, generate
 from log import dump
+from heft2 import heft2, get_chromosome
 
 def nsga_2(task_names,
 		   type_names, 
@@ -12,6 +13,7 @@ def nsga_2(task_names,
 		   task_preds,
 		   comm_speeds,
 		   comm_sizes,
+		   task_seccs,
 		   archive_name=None):
 	
 	n_tasks = len(task_names)
@@ -43,7 +45,12 @@ def nsga_2(task_names,
 	# pool = multiprocessing.Pool()
 	# toolbox.register("map", pool.map)
 
-	pop = toolbox.population(10)
+	pop = toolbox.population(50)
+
+	_, loc, ts = heft2(type_info_price, type_info_ecu, task_base_time,\
+					   task_preds, comm_speeds, comm_sizes, task_seccs)
+
+	pop[0][:] = get_chromosome(loc, ts)
 	# hof = tools.ParetoFront()
 	# hof.update(pop)
 
@@ -51,17 +58,17 @@ def nsga_2(task_names,
 	for fit, ind in zip(fits, pop):
 		ind.fitness.values = fit
 
-	for gen in range(100*n_tasks):
-		offspring = tools.selTournament(pop, 10, 2)
+	for gen in range(100000):
+		offspring = tools.selTournament(pop, 50, 2)
 		offspring = toolbox.map(toolbox.clone, offspring)
 
 		for ind1, ind2 in zip(offspring[::2], offspring[1::2]):
-			# if random.random() <= 0.5:
-			toolbox.mate(ind1, ind2)
-			del ind1.fitness.values, ind2.fitness.values
+			if random.random() <= 0.5:
+				toolbox.mate(ind1, ind2)
+				del ind1.fitness.values, ind2.fitness.values
 
 		for ind in offspring:
-			if random.random() <= 0.5:
+			if random.random() <= 0.3:
 				toolbox.mutate(ind)
 				del ind.fitness.values
 
@@ -70,7 +77,7 @@ def nsga_2(task_names,
 		for ind, fit in zip(invalid_ind, fitnesses):
 			ind.fitness.values = fit
 
-		pop = toolbox.select(pop + offspring, 10)
+		pop = toolbox.select(pop + offspring, 50)
 		# hof.update(offspring)
 		# pop = hof
 
@@ -100,7 +107,7 @@ if __name__ == '__main__':
 	wf = Workflow(argv[1])
 	pool = AWS("aws.info")
 
-	ar = nsga_2(*get_info(wf, pool), archive_name="archive/%s.ar" % os.path.split(argv[1])[1][:-4])
+	ar = nsga_2(*(get_info(wf, pool)), archive_name="archive/%s.ar" % os.path.split(argv[1])[1][:-4])
 
 	for i in range(len(ar)):
 		print "[%d]: Makespan: %.0fs\tCost: $%.2f" % (i, ar[i].fitness.values[0], ar[i].fitness.values[1])

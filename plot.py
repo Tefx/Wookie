@@ -38,6 +38,10 @@ def show(z, lables):
 	ax.set_yticklabels(lables, minor=False)
 	plt.show()
 
+def show2():
+	lables = ["%s_%s" % (x[1], x[0]) for x in results]
+
+
 def stat(result):
 	s = {}
 	for _, t, _ in result:

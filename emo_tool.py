@@ -14,6 +14,7 @@ def get_info(wf, pool):
 	type_info_ecu = array.array('f', [pool.info[type_names[i]]["ecu"] for i in range(n_types)])
 	task_base_time = array.array('f', [wf.get_cost(t) for t in task_names])
 	task_preds = tuple((tuple(array.array('I', [task_names.index(t) for t in wf.pred(t0)])) for t0 in task_names))
+	task_seccs = tuple((tuple(array.array('I', [task_names.index(t) for t in wf.secc(t0)])) for t0 in task_names))
 	comm_speeds = tuple((tuple((min([pool.info[t0]["net"], pool.info[t1]["net"]])) for t1 in type_names) for t0 in type_names))
 	comm_sizes = tuple((tuple((wf.get_data_size(t0, t1) for t1 in task_names)) for t0 in task_names))
 	
@@ -24,7 +25,8 @@ def get_info(wf, pool):
 		   task_base_time, 	\
 		   task_preds, 		\
 		   comm_speeds, 	\
-		   comm_sizes
+		   comm_sizes,		\
+		   task_seccs
 
 def generate(n_tasks, n_types):
 	def cycle(*args):
@@ -54,7 +56,7 @@ def evaluate(candidate,
 	for task_index in range(n_tasks):
 		task_node = c_task_node(task_index)
 		node_type = c_node_type(task_node)
-		comp_time = round(task_base_time[task_index] / type_info_ecu[node_type])
+		comp_time = task_base_time[task_index] / type_info_ecu[node_type]
 		aft[task_index] = comp_time
 		ast = 0
 		for ti in task_preds[task_index]:
@@ -64,7 +66,7 @@ def evaluate(candidate,
 				comm_time = 0
 			else:
 				speed = comm_speeds[ti_type][node_type]
-				comm_time = round(comm_sizes[ti][task_index]/speed)
+				comm_time = comm_sizes[ti][task_index]/speed
 			est = comm_time + aft[ti]
 			eft = comp_time + est
 			if aft[task_index] < eft:
@@ -82,6 +84,7 @@ def evaluate(candidate,
 	o_cost = 0
 	for start, end, index in itertools.izip(nodes_start, nodes_avail, range(n_nodes)):
 		if start >= 0:
+			# print start, end
 			o_cost += math.ceil((end - start) / 3600) * type_info_price[c_node_type(index)]
 
 	return round(o_time, 0), round(o_cost, 2)

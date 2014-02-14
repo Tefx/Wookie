@@ -34,7 +34,8 @@ class AWS(Pool):
 			if filename:
 				self.write_file(filename)
 		self.node_id_count = len(self.info) + 1
-		self.avail_nodes = set([x for x in range(self.node_id_count-1)])
+		# self.avail_nodes = set([x for x in range(self.node_id_count-1)])
+		self.avail_nodes = range(self.node_id_count-1)
 		self.nodes = {n:{"type":t,"event":[],"avail":0} for n,t in zip(self.avail_nodes, self.info.keys())}
 
 	def read_file(self, filename):
@@ -50,7 +51,8 @@ class AWS(Pool):
 	def add_task(self, tn, n, s, e):
 		self.nodes[n]["event"].append((tn, s, e))
 		if self.nodes[n]["avail"] == 0:
-			self.avail_nodes.add(self.node_id_count)
+			# self.avail_nodes.add(self.node_id_count)
+			self.avail_nodes.append(self.node_id_count)
 			self.nodes[self.node_id_count] = {
 				"event"	:	[],
 				"type"	:	self.nodes[n]["type"],
@@ -101,9 +103,10 @@ class AWS(Pool):
 						start = s
 					if e > end:
 						end = e
-				h = math.ceil((e - s)/3600.0)
-				if h == 0:
-					h = 1
+				# print self.nodes[n]["type"], start, end
+				h = math.ceil((end - start)/3600.0)
+				# if h == 0:
+				# 	h = 1
 				total += h * self.info[self.nodes[n]["type"]]["price"]
 		return total
 
